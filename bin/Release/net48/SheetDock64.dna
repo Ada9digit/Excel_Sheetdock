@@ -1,3 +1,0 @@
-<DnaLibrary Name="SheetDock" Description="Unified SheetDock and StatDock" RuntimeVersion="v4.0">
-  <ExternalLibrary Path="SheetDock.dll" ExplicitExports="false" LoadFromBytes="true" Pack="true" />
-</DnaLibrary>
