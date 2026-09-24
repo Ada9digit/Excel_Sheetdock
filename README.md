@@ -1,3 +1,4 @@
+(Ai Generated Code)
 # SheetDock + StatDock
 
 An Excel-DNA add-in that combines **SheetDock** and **StatDock** into a single Excel add-in.
