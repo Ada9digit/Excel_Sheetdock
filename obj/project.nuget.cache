@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "dgSpecHash": "0fLMu4k3ytI=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Renaldi\\Documents\\SheetDock\\SheetDock.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Renaldi\\.nuget\\packages\\exceldna.addin\\1.7.0\\exceldna.addin.1.7.0.nupkg.sha512",
+    "C:\\Users\\Renaldi\\.nuget\\packages\\exceldna.integration\\1.7.0\\exceldna.integration.1.7.0.nupkg.sha512",
+    "C:\\Users\\Renaldi\\.nuget\\packages\\microsoft.netframework.referenceassemblies\\1.0.3\\microsoft.netframework.referenceassemblies.1.0.3.nupkg.sha512",
+    "C:\\Users\\Renaldi\\.nuget\\packages\\microsoft.netframework.referenceassemblies.net48\\1.0.3\\microsoft.netframework.referenceassemblies.net48.1.0.3.nupkg.sha512",
+    "C:\\Users\\Renaldi\\.nuget\\packages\\microsoft.office.interop.excel\\15.0.4420.1017\\microsoft.office.interop.excel.15.0.4420.1017.nupkg.sha512",
+    "C:\\Users\\Renaldi\\.nuget\\packages\\msofficecore.interop\\15.0.2\\msofficecore.interop.15.0.2.nupkg.sha512"
+  ],
+  "logs": []
+}

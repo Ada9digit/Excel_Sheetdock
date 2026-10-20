@@ -11,9 +11,6 @@
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <ComVisible>false</ComVisible>
   </PropertyGroup>
-  <PropertyGroup>
-    <PublishDir>$(MSBuildProjectDirectory)\publish\</PublishDir>
-  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="ExcelDna.AddIn" Version="1.7.0" />
     <PackageReference Include="ExcelDna.Integration" Version="1.7.0" />

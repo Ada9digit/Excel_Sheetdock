@@ -1,0 +1,15 @@
+{
+  "name": "sheetdock",
+  "version": "1.0.0",
+  "description": "SheetDock + StatDock - Excel-DNA add-in (build via npm)",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.js",
+    "rebuild": "node scripts/build.js --clean --kill-excel",
+    "rebuild:install": "node scripts/build.js --clean --kill-excel --install",
+    "clean": "node scripts/build.js --clean-only"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

@@ -465,6 +465,31 @@ namespace SheetDock
         private readonly Timer _themeTimer;   // recompute the theme after the pane is shown / resized
         private int _autoScrollDir;
 
+        [DllImport("user32.dll")]
+        private static extern IntPtr SetFocus(IntPtr hWnd);
+
+        /// <summary>
+        /// After a mouse click in the pane, keyboard focus stays on the ListBox, so Ctrl+C / Ctrl+V /
+        /// Ctrl+Z etc. never reach the worksheet. Hand focus back to the active workbook window.
+        /// Deferred so it runs after the current click handler has finished.
+        /// </summary>
+        private void ReturnFocusToExcel()
+        {
+            try
+            {
+                _sheetList.BeginInvoke((Action)(() =>
+                {
+                    try
+                    {
+                        var wn = Globals.Application?.ActiveWindow;
+                        if (wn != null) SetFocus(new IntPtr(wn.Hwnd));
+                    }
+                    catch { }
+                }));
+            }
+            catch { }
+        }
+
         // > 0 while we change the selection programmatically (refresh, etc.),
         // so SelectedIndexChanged doesn't trigger ws.Activate() in Excel.
         private int _suppressActivate;
@@ -899,6 +924,11 @@ namespace SheetDock
             // Plain click (including a click on the handle without dragging) -> activate the sheet on mouse release.
             if (activate && _sheetList.SelectedIndices.Count == 1)
                 ActivateSelectedSheet();
+
+            // Give the keyboard back to Excel so copy/paste works right after switching or moving a sheet.
+            // Not done for Ctrl/Shift multi-select, where Delete/F2 in the list still need focus.
+            if ((activate || moved) && _sheetList.SelectedIndices.Count == 1)
+                ReturnFocusToExcel();
         }
 
         /// <summary>
@@ -1337,6 +1367,7 @@ namespace SheetDock
         private void SheetList_DoubleClick(object sender, EventArgs e)
         {
             ActivateSelectedSheet();
+            ReturnFocusToExcel();
         }
 
         private void SheetList_SelectedIndexChanged(object sender, EventArgs e)

@@ -1,0 +1,13 @@
+C:\Users\Renaldi\Documents\SheetDock\bin\Release\net48\SheetDock.dna
+C:\Users\Renaldi\Documents\SheetDock\bin\Release\net48\SheetDock.dll
+C:\Users\Renaldi\Documents\SheetDock\bin\Release\net48\SheetDock.pdb
+C:\Users\Renaldi\Documents\SheetDock\bin\Release\net48\Microsoft.Office.Interop.Excel.dll
+C:\Users\Renaldi\Documents\SheetDock\bin\Release\net48\Office.dll
+C:\Users\Renaldi\Documents\SheetDock\obj\Release\net48\SheetDock.csproj.AssemblyReference.cache
+C:\Users\Renaldi\Documents\SheetDock\obj\Release\net48\SheetDock.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Renaldi\Documents\SheetDock\obj\Release\net48\SheetDock.AssemblyInfoInputs.cache
+C:\Users\Renaldi\Documents\SheetDock\obj\Release\net48\SheetDock.AssemblyInfo.cs
+C:\Users\Renaldi\Documents\SheetDock\obj\Release\net48\SheetDock.csproj.CoreCompileInputs.cache
+C:\Users\Renaldi\Documents\SheetDock\obj\Release\net48\SheetDock.csproj.Up2Date
+C:\Users\Renaldi\Documents\SheetDock\obj\Release\net48\SheetDock.dll
+C:\Users\Renaldi\Documents\SheetDock\obj\Release\net48\SheetDock.pdb

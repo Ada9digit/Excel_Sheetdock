@@ -506,7 +506,7 @@ namespace StatDock
                     // Excel itself creates the native Undo record.
                     string formula = snap.BuildFormula(kind, snap.ListSeparator);
 
-                    if (!Commands.PasteFormulaNative(app, target, formula))
+                    if (!Commands.PasteFormulaNative(app, target, formula, snap.BuildFormula(kind, ",")))
                     {
                         Flash("Failed to write formula at " + address, true);
                         return;

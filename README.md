@@ -1,4 +1,3 @@
-(Ai Generated Code)
 # SheetDock + StatDock
 
 An Excel-DNA add-in that combines **SheetDock** and **StatDock** into a single Excel add-in.
@@ -153,68 +152,43 @@ This is necessary because native Paste can raise several Excel events, for examp
 
 Those events must not immediately trigger nested `StatEngine.Capture()` calls.
 
-## Build
+## Build (npm)
 
-The project targets:
-
-```text
-.NET Framework 4.8
-```
-
-Release build:
+Prasyarat: Windows dan [Node.js](https://nodejs.org) >= 16. .NET SDK tidak perlu diinstall: jika `dotnet` tidak ada di PATH, `npm run build` mengunduh SDK portable ke folder `.dotnet\\` di project (sekali saja, butuh internet, tanpa admin). Target project adalah .NET Framework 4.8; kompilasi C# tetap dilakukan `dotnet`, sedangkan npm hanya menyiapkan SDK, menjalankan build, dan merapikan hasilnya. Folder `.dotnet` tidak dihapus oleh `npm run clean`; hapus manual jika ingin membersihkannya.
 
 ```powershell
-dotnet build -c Release
+npm run build      # build Release, hasil .xll di folder ini
+npm run rebuild    # tutup Excel, hapus bin/obj/xll lama, lalu build
+npm run rebuild:install  # seperti rebuild, lalu jalankan Installer.bat
+npm run clean      # hapus bin, obj, dan *-packed.xll di root
 ```
 
-If Excel has the previous build's add-in open and the `.xll` file is locked, close Excel first.
+Tidak ada `npm install` yang perlu dijalankan karena script tidak memakai dependency.
 
-If needed:
+`npm run rebuild` menutup Excel secara paksa (taskkill), jadi simpan pekerjaanmu dulu. Dua file `.bat` di root bisa di-double-click: `rebuild.bat` dan `rebuild-install.bat`.
 
-```powershell
-Stop-Process -Name EXCEL -Force
-```
+## Release
 
-Then clean the output:
-
-```powershell
-Remove-Item -Recurse -Force .\bin, .\obj -ErrorAction SilentlyContinue
-```
-
-Then rebuild:
-
-```powershell
-dotnet build -c Release
-```
-
-## Publish
-
-Publish output is placed in the outer project folder:
-
-```text
-publish\
-```
-
-Example:
+Hasil build disalin langsung ke folder project (root), bukan ke dalam `bin\Release\net48\publish`:
 
 ```text
 SheetDock\
-├── publish\
-│   ├── SheetDock64.xll
-│   ├── SheetDock64.dna
-│   └── dependencies...
+├── SheetDock64-packed.xll   (Excel 64-bit)
+├── SheetDock-packed.xll     (Excel 32-bit)
+├── Installer.bat
+├── package.json
 ├── SheetDock.csproj
 └── ...
 ```
 
-The `publish` folder is the output used for deploying/installing the add-in.
+File `.xll` sudah *packed* (DLL dan dependency tertanam), jadi cukup satu file per arsitektur. Untuk memasang, jalankan `Installer.bat`, atau load `.xll` lewat Excel Add-ins.
 
 ## Installation
 
 1. Build the project in `Release` configuration.
-2. Make sure the output is available in the `publish` folder.
+2. Make sure the output is available in the project folder.
 3. Open Excel.
-4. Load the published `.xll` file via:
+4. Load the `.xll` file from the project folder via:
    - `File`
    - `Options`
    - `Add-ins`
@@ -315,7 +289,7 @@ After building, test at minimum:
 - [ ] `Ctrl+Y` can redo when Excel has a native redo state.
 - [ ] Excel doesn't refresh repeatedly when Calculate/Change events occur.
 - [ ] Release build succeeds.
-- [ ] The publish files can be used to load the add-in.
+- [ ] The `*-packed.xll` files can be used to load the add-in.
 
 ## Key Files
 
@@ -327,7 +301,7 @@ After building, test at minimum:
 | `StatEngine.cs` | Capture and statistics calculation |
 | `StatBar.cs` | StatDock status bar UI |
 | `NavigatorPane.cs` | SheetDock navigation UI |
-| `publish\` | Deployment output |
+| `*-packed.xll` | Deployment output |
 
 ## Status
 
