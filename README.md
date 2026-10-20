@@ -1,324 +1,245 @@
 # SheetDock + StatDock
 
-An Excel-DNA add-in that combines **SheetDock** and **StatDock** into a single Excel add-in.
+**Dua alat kecil yang bikin Excel terasa lebih lega: navigasi sheet yang rapi di sisi layar, dan statistik seleksi yang bisa langsung "ditarik" jadi rumus.**
 
-## Features
+![Platform](https://img.shields.io/badge/platform-Excel%20for%20Windows-217346?logo=microsoftexcel&logoColor=white)
+![Framework](https://img.shields.io/badge/.NET%20Framework-4.8-512BD4?logo=dotnet&logoColor=white)
+![Excel-DNA](https://img.shields.io/badge/Excel--DNA-1.7.0-blue)
+![Build](https://img.shields.io/badge/build-npm%20run%20build-CB3837?logo=npm&logoColor=white)
 
-### SheetDock
-- Worksheet/workbook navigation from a dock pane.
-- Worksheet buttons are displayed as chips.
-- Quick navigation between sheets.
-- The UI uses a visual theme consistent with StatDock.
+---
 
-### StatDock
-- Shows statistics for the current Excel selection in the status bar.
-- Event-based refresh with debounce.
-- Lightweight polling for changes such as filtering/hiding rows, which don't always raise an Excel event.
-- The status bar follows Excel's `DisplayStatusBar`.
-- Supports suspending visuals during startup or certain operations.
-- Refresh is held back during mouse operations to prevent repeated COM reads.
-- Protection against Excel being busy/calculating.
-- Native Paste is used to insert formulas so that undo stays managed by Excel.
+## Apa ini, dan kenapa kamu mungkin butuh?
 
-## Architecture
+Kalau kamu pernah bekerja dengan workbook Excel berisi **puluhan sheet**, kamu pasti kenal dua keluhan ini:
 
-Main structure:
+1. **Tab sheet di bawah layar sempit dan sulit dipakai.** Nama sheet terpotong, harus scroll kiri-kanan, dan mencari satu sheet di antara 30 tab itu melelahkan.
+2. **Statistik di status bar hanya bisa dilihat, tidak bisa dipakai.** Excel menampilkan Average, Count, dan Sum dari sel yang kamu pilih, tetapi untuk memakai angka itu kamu tetap harus mengetik rumusnya sendiri.
+
+**SheetDock + StatDock** menyelesaikan keduanya dalam satu add-in:
+
+| | Masalah di Excel biasa | Dengan add-in ini |
+|---|---|---|
+| **SheetDock** | Tab sheet kecil, sempit, dan harus di-scroll | Panel daftar sheet di samping layar, satu "chip" per sheet, bisa diurutkan dengan drag |
+| **StatDock** | Angka statistik hanya tampil, tidak bisa dipakai ulang | Chip statistik di status bar yang bisa **ditarik ke sel** menjadi rumus |
+
+Tidak perlu belajar apa pun. Pasang, buka Excel, dan semuanya langsung terlihat.
+
+---
+
+## Tampilan sekilas
+
+Berikut gambaran kasarnya (bukan screenshot asli):
+
+```text
+┌─────────────┬──────────────────────────────────────────────────────┐
+│ SheetDock   │   A      B       C       D                           │
+│             │ 1  Nama   Qty    Harga   Total                       │
+│ ⠿ Ringkasan │ 2  Kopi   10     15000   150000                      │
+│ ⠿ Penjualan │ 3  Teh    8      12000    96000                      │
+│ ⠿ Stok      │ 4  Susu   5      18000    90000                      │
+│ ⠿ Laporan   │ 5                                                    │
+│ ⠿ Data 2024 │                                                      │
+│ ⠿ Data 2025 │                                                      │
+│    ...      │                                                      │
+├─────────────┴──────────────────────────────────────────────────────┤
+│ Ready   Sheet 2 of 12      Average  Count  Min  Max  [ Sum ]  100% │
+└────────────────────────────────────────────────────────────────────┘
+   ▲ SheetDock: daftar sheet           ▲ StatDock: tarik chip ke sel
+```
+
+---
+
+## SheetDock: navigasi sheet yang waras
+
+Panel di sisi kiri Excel (bisa dipindah ke sisi lain) yang menampilkan **semua sheet sebagai daftar chip**.
+
+- **Satu klik pindah sheet.** Tidak perlu scroll tab. Worksheet dan chart sheet sama-sama didukung.
+- **Drag untuk mengurutkan.** Tarik chip lewat gagang di sisinya untuk memindahkan posisi sheet. Daftar bergulir otomatis saat kamu menarik ke tepi.
+- **Pilih banyak sheet sekaligus** dengan Ctrl atau Shift, misalnya untuk menduplikasi beberapa sheet dalam sekali jalan.
+- **Warna tab ikut tampil**, jadi sistem pewarnaan sheet yang sudah kamu buat tetap berguna.
+- **Klik kanan** membuka menu sheet bawaan Excel (Rename, Delete, Move or Copy, Tab Color, Hide, Unhide, dan seterusnya), ditambah empat menu ekstra:
+  - **Add Sheet**
+  - **Insert From File...** (menyisipkan sheet dari file Excel lain)
+  - **Duplicate**
+  - **Duplicate Selection** (menduplikasi semua sheet yang sedang dipilih)
+- **Pintasan keyboard:** `F2` untuk rename, `Delete` untuk menghapus sheet terpilih.
+- **Sheet tersembunyi tidak mengotori daftar.**
+- **Tampilan mengikuti tema Office-mu** (White, Colorful, Dark Gray, atau Black), jadi tidak terlihat seperti benda asing.
+- **Tab bawaan Excel disembunyikan** supaya tidak dobel. Bisa dimunculkan lagi kapan saja lewat ribbon.
+
+---
+
+## StatDock: statistik yang bisa kamu tarik
+
+Strip tipis yang menempel di **status bar Excel** (di tempat Average/Count/Sum bawaan berada) dan menampilkan statistik dari sel yang sedang kamu pilih:
+
+`Average` · `Count` · `Numerical Count` · `Min` · `Max` · `Sum`
+
+Yang membuatnya berbeda dari status bar biasa:
+
+- **Tarik chip ke sel, jadilah rumus.** Pilih A1:A10, tarik chip **Sum** ke sel kosong, dan sel itu berisi `=SUM(A1:A10)`. Selama menarik, ada pratinjau kecil yang menunjukkan alamat sel tujuan.
+- **Paham filter dan baris tersembunyi.** Angka yang ditampilkan hanya dari sel yang **terlihat**. Rumus yang dihasilkan menyesuaikan: untuk data terfilter dipakai alamat area yang terlihat, dan jika terlalu panjang dipakai `SUBTOTAL(109, ...)` yang otomatis melewati baris tersembunyi.
+- **Melindungi dari kesalahan.** Menjatuhkan chip ke dalam range sumbernya sendiri ditolak (menghindari *circular reference*), begitu juga menjatuhkannya di luar sel.
+- **Menyesuaikan lebar.** Jika ruang sempit, chip yang kurang penting disembunyikan lebih dulu. `Sum` tidak pernah disembunyikan.
+- **Ringan.** Pembaruan dilakukan setelah jeda singkat (debounce) dan tidak dijalankan saat kamu sedang drag-select atau Excel sedang menghitung, jadi Excel tidak terasa berat.
+- **Mengikuti tema dan tampilan status bar.** Warna menyesuaikan Excel, dan strip ikut hilang jika status bar dimatikan.
+
+---
+
+## Ribbon
+
+Add-in menambahkan satu tab **SheetDock** di ribbon dengan tiga tombol:
+
+| Tombol | Fungsi |
+|---|---|
+| **Custom SheetDock** | Tampilkan atau sembunyikan panel daftar sheet |
+| **Built-in Excel Tabs** | Tampilkan atau sembunyikan tab sheet bawaan Excel |
+| **Quick Stats** | Aktifkan atau matikan strip StatDock di status bar |
+
+---
+
+## Persyaratan
+
+- **Windows** dengan **Microsoft Excel desktop** (bukan Excel untuk Mac atau Excel di browser)
+- **.NET Framework 4.8** (sudah bawaan Windows 10 dan 11 yang terbaru)
+- Tersedia dua versi file: **64-bit** (`SheetDock64-packed.xll`) dan **32-bit** (`SheetDock-packed.xll`). Pilih sesuai versi Excel-mu. Mayoritas Excel modern adalah 64-bit.
+
+---
+
+## Instalasi
+
+### Cara cepat (disarankan)
+
+1. Pastikan file `SheetDock64-packed.xll` dan `Installer.bat` ada di folder yang sama.
+2. **Klik dua kali `Installer.bat`.** Izinkan prompt Administrator.
+3. Installer akan menutup Excel (simpan pekerjaanmu dulu), membuka blokir file unduhan, dan menyalin add-in ke folder AddIns milikmu.
+4. Buka Excel. Jika tab **SheetDock** belum muncul, aktifkan lewat *File → Options → Add-ins → Manage: Excel Add-ins → Go*.
+
+### Cara manual
+
+1. Buka Excel, lalu *File → Options → Add-ins*.
+2. Pilih **Manage: Excel Add-ins**, klik **Go...**, lalu **Browse...**.
+3. Pilih file `.xll` yang sesuai dan centang add-in-nya.
+
+> **Kalau Windows memblokir file:** klik kanan file `.xll` → *Properties* → centang **Unblock** → OK. `Installer.bat` sudah melakukan ini otomatis.
+
+---
+
+## Membangun dari source
+
+Untuk developer. Yang kamu butuhkan hanya **Windows** dan **Node.js 16+**. Perintah `dotnet` tidak wajib sudah terpasang: jika tidak ditemukan, script mengunduh .NET SDK versi portable ke folder `.dotnet/` di dalam project (sekali saja, tanpa admin, tidak menyentuh PATH).
+
+```powershell
+npm run build             # build Release, hasil .xll muncul di folder project
+npm run rebuild           # tutup Excel, hapus build lama, lalu build ulang
+npm run rebuild:install   # sama seperti rebuild, lalu langsung jalankan Installer.bat
+npm run clean             # hapus bin, obj, dan file .xll hasil build
+```
+
+Tidak perlu `npm install`: script hanya memakai modul bawaan Node.
+
+Malas membuka terminal? Klik dua kali:
+
+- `rebuild.bat` → tutup Excel, bersihkan, build ulang
+- `rebuild-install.bat` → semua di atas, lalu pasang ke Excel
+
+> ⚠️ `rebuild` dan `rebuild:install` **menutup Excel secara paksa** supaya file `.xll` lama tidak terkunci. Simpan pekerjaanmu dulu.
+
+Hasil build berupa dua file di root project:
+
+```text
+SheetDock64-packed.xll   Excel 64-bit
+SheetDock-packed.xll     Excel 32-bit
+```
+
+File `.xll` ini sudah *packed* (DLL dan dependency tertanam di dalamnya), jadi satu file per arsitektur sudah cukup untuk dibagikan.
+
+---
+
+## Struktur project
 
 ```text
 SheetDock/
-├── CombinedAddIn.cs
-├── Ribbon/
-│   └── ...
-├── SheetDock/
-│   └── Navigation/
-│       └── NavigatorPane.cs
-└── StatDock/
-    ├── Core/
-    │   ├── Commands.cs
-    │   ├── StatEngine.cs
-    │   └── StatHost.cs
-    └── UI/
-        └── StatBar.cs
+├── App/
+│   └── CombinedAddIn.cs          Titik masuk add-in, merangkai kedua modul
+├── UI/
+│   └── SheetDockRibbon.cs        Tab dan tombol ribbon
+├── SheetDock/Navigation/         Modul SheetDock
+│   ├── NavigatorPane.cs          Panel daftar sheet (UI, drag, menu, aksi sheet)
+│   ├── RecentSheets.cs           Riwayat sheet yang dikunjungi
+│   ├── FolderStore.cs            Penyimpanan struktur folder virtual di dalam workbook
+│   ├── Commands.cs               Makro untuk menu klik kanan
+│   └── Globals.cs
+├── StatDock/                     Modul StatDock
+│   ├── Core/
+│   │   ├── StatEngine.cs         Membaca seleksi dan menghitung statistik
+│   │   ├── StatHost.cs           Siklus hidup, debounce, polling, pengaman refresh
+│   │   ├── Commands.cs           Memasukkan rumus ke sel
+│   │   └── Globals.cs
+│   ├── UI/
+│   │   ├── StatBar.cs            Strip di status bar
+│   │   ├── StatChip.cs           Chip statistik yang bisa ditarik
+│   │   ├── DragGhost.cs          Pratinjau saat drag
+│   │   └── ThemeColors.cs        Warna mengikuti tema Excel
+│   └── Infrastructure/
+│       └── Native.cs             Pemanggilan Win32 (posisi jendela, DPI, mouse)
+├── scripts/build.js              Skrip build npm
+├── Installer.bat                 Installer add-in
+├── rebuild.bat / rebuild-install.bat
+├── SheetDock.csproj              Project .NET Framework 4.8 + Excel-DNA
+└── package.json
 ```
 
-`CombinedAddIn` is the add-in entry point. SheetDock and StatDock run as modules inside the same add-in.
+---
 
-## StatDock Refresh Model
+## Cara kerja (untuk yang penasaran)
 
-StatDock uses three timers:
+**Arsitektur.** Add-in dibangun dengan [Excel-DNA](https://excel-dna.net/), yang menjembatani C# ke Excel. `CombinedAddIn` adalah satu-satunya titik masuk dan menjalankan SheetDock serta StatDock sebagai dua modul di dalam add-in yang sama.
 
-1. **Debounce timer**
-   - Merges consecutive Excel events.
-   - Prevents every event from immediately running `StatEngine.Capture()`.
+**Model refresh StatDock.** Membaca seleksi lewat COM itu mahal, jadi StatDock memakai tiga timer:
 
-2. **Track timer**
-   - Runs more frequently.
-   - Used to keep the strip's position/visibility on the status bar in sync.
-   - Does not perform a full COM statistics read.
+1. **Debounce:** menggabungkan banyak event Excel beruntun menjadi satu pembaruan.
+2. **Track:** ringan dan sering; hanya menjaga posisi dan visibilitas strip, tanpa membaca data.
+3. **Poll:** mendeteksi perubahan yang tidak selalu memicu event (misalnya filter atau baris disembunyikan), dibatasi frekuensinya.
 
-3. **Poll timer**
-   - Used to detect changes that don't always raise an Excel event.
-   - Examples: changes caused by filtering or hidden rows.
-   - Polling is throttled so it doesn't keep calling COM while Excel is busy.
+Beberapa pengaman mencegah rantai pembaruan yang saling memicu: jendela *mute* setelah tiap pembaruan, penundaan saat tombol mouse ditekan, dan penundaan saat Excel sedang sibuk atau menghitung.
 
-### Refresh Gate
+**Memasukkan rumus.** Rumus dimasukkan lewat clipboard dan perintah **Ctrl+V yang dikirim ke Excel**, sehingga dikerjakan Excel sebagai aksi pengguna. Mode copy Excel dibatalkan lebih dulu agar yang tertempel benar-benar rumus. Sesaat kemudian hasilnya diperiksa; jika sel tidak berisi rumus yang valid (misalnya karena nama fungsi berbahasa lokal), rumus ditulis langsung lewat `Range.Formula` dengan nama fungsi Inggris sebagai cadangan. Setiap drop dicatat di `%TEMP%\SheetDock.log`, berguna untuk melacak masalah.
 
-`StatHost` has several protection mechanisms:
+---
 
-- `_updateRunning`
-- `_eventMuteUntil`
-- `_filterSettleUntil`
-- `_nextPollAt`
-- `_busyRetryAt`
-- `_nextUpdateAt`
+## Pemecahan masalah
 
-The goal is to make sure a single Excel operation doesn't produce a chain like:
-
-```text
-Excel event
-    ↓
-StatDock Update
-    ↓
-StatEngine.Capture
-    ↓
-Excel event
-    ↓
-StatDock Update
-    ↓
-...
-```
-
-Events that occur during the mute/settle period are not used to trigger nested refreshes.
-
-## Native Paste and Undo
-
-StatDock formulas are not written using:
-
-```csharp
-target.Formula = formula;
-```
-
-Instead, the clipboard + Excel's native command is used:
-
-```text
-Clipboard
-   ↓
-target.Select()
-   ↓
-CommandBars.ExecuteMso("Paste")
-   ↓
-Excel native undo history
-```
-
-The implementation lives in:
-
-```text
-StatDock/Core/Commands.cs
-```
-
-This path is used deliberately because writing directly to `Range.Formula` through automation can interfere with Excel's native undo history.
-
-StatDock does not install:
-
-```text
-Application.OnUndo
-Application.OnRepeat
-```
-
-This way, undo/redo commands remain under Excel's native mechanism.
-
-## External Edit Protection
-
-Before the native Paste:
-
-```csharp
-StatHost.BeginExternalEdit();
-```
-
-StatDock then holds back refreshes while Excel performs the Paste operation.
-
-After the operation completes:
-
-```csharp
-StatHost.EndExternalEdit(250);
-```
-
-This is necessary because native Paste can raise several Excel events, for example:
-
-- Activate
-- Select
-- Change
-- Calculate
-
-Those events must not immediately trigger nested `StatEngine.Capture()` calls.
-
-## Build (npm)
-
-Prasyarat: Windows dan [Node.js](https://nodejs.org) >= 16. .NET SDK tidak perlu diinstall: jika `dotnet` tidak ada di PATH, `npm run build` mengunduh SDK portable ke folder `.dotnet\\` di project (sekali saja, butuh internet, tanpa admin). Target project adalah .NET Framework 4.8; kompilasi C# tetap dilakukan `dotnet`, sedangkan npm hanya menyiapkan SDK, menjalankan build, dan merapikan hasilnya. Folder `.dotnet` tidak dihapus oleh `npm run clean`; hapus manual jika ingin membersihkannya.
-
-```powershell
-npm run build      # build Release, hasil .xll di folder ini
-npm run rebuild    # tutup Excel, hapus bin/obj/xll lama, lalu build
-npm run rebuild:install  # seperti rebuild, lalu jalankan Installer.bat
-npm run clean      # hapus bin, obj, dan *-packed.xll di root
-```
-
-Tidak ada `npm install` yang perlu dijalankan karena script tidak memakai dependency.
-
-`npm run rebuild` menutup Excel secara paksa (taskkill), jadi simpan pekerjaanmu dulu. Dua file `.bat` di root bisa di-double-click: `rebuild.bat` dan `rebuild-install.bat`.
-
-## Release
-
-Hasil build disalin langsung ke folder project (root), bukan ke dalam `bin\Release\net48\publish`:
-
-```text
-SheetDock\
-├── SheetDock64-packed.xll   (Excel 64-bit)
-├── SheetDock-packed.xll     (Excel 32-bit)
-├── Installer.bat
-├── package.json
-├── SheetDock.csproj
-└── ...
-```
-
-File `.xll` sudah *packed* (DLL dan dependency tertanam), jadi cukup satu file per arsitektur. Untuk memasang, jalankan `Installer.bat`, atau load `.xll` lewat Excel Add-ins.
-
-## Installation
-
-1. Build the project in `Release` configuration.
-2. Make sure the output is available in the project folder.
-3. Open Excel.
-4. Load the `.xll` file from the project folder via:
-   - `File`
-   - `Options`
-   - `Add-ins`
-   - `Excel Add-ins`
-   - `Browse`
-5. Select the `.xll` file.
-6. Make sure the SheetDock/StatDock ribbon appears.
-
-## Troubleshooting
-
-### Excel keeps showing the loading cursor after drag/paste
-
-Make sure the latest version of `StatHost.cs` is used.
-
-Native Paste does produce several Excel events. `BeginExternalEdit()` and `EndExternalEdit()` must still be called from `Commands.PasteFormulaNative()`.
-
-### Build fails because the `.xll` file is in use
-
-Close Excel.
-
-If it is still locked:
-
-```powershell
-Stop-Process -Name EXCEL -Force
-```
-
-Then:
-
-```powershell
-Remove-Item -Recurse -Force .\bin, .\obj -ErrorAction SilentlyContinue
-dotnet build -c Release
-```
-
-### `CS0656 Missing compiler required member Microsoft.CSharp.RuntimeBinder...`
-
-Do not use `dynamic` in `Commands.cs` for `CommandBars.ExecuteMso`.
-
-The current implementation uses reflection:
-
-```csharp
-MethodInfo
-```
-
-so it doesn't require the C# runtime binder.
-
-### Duplicate class
-
-Make sure there is only one implementation of each class.
-
-Structure in use:
-
-```text
-StatDock/Core/Commands.cs
-StatDock/Core/StatHost.cs
-StatDock/UI/StatBar.cs
-SheetDock/Navigation/NavigatorPane.cs
-```
-
-Avoid leftover old files with the same name/class in other folders.
-
-## Development Notes
-
-### Do not use `Application.OnUndo`
-
-`Application.OnUndo` replaces Excel's undo command with an add-in callback. For a drag/paste workflow that must stay compatible with Excel's native undo/redo, use Excel's native Paste.
-
-### Do not perform COM capture from the Track timer
-
-`Track()` is designed for lightweight, P/Invoke-only operations. The full statistics read is done by `Update()` via `StatEngine.Capture()`.
-
-### Do not remove the mute window without testing
-
-Excel events can fire back-to-back during:
-
-- Paste
-- Select
-- Change
-- Calculate
-- Activate
-- Filter
-
-Without debounce/mute, these operations can cause repeated refreshes and make Excel look like it is constantly loading.
-
-## Testing Checklist
-
-After building, test at minimum:
-
-- [ ] The add-in loads in Excel.
-- [ ] The ribbon appears.
-- [ ] SheetDock can switch worksheets.
-- [ ] StatDock appears on the status bar.
-- [ ] Selection changes → statistics update.
-- [ ] Filter a worksheet → statistics update.
-- [ ] Hide/unhide rows → statistics update.
-- [ ] Drag a formula from StatDock onto a cell.
-- [ ] No loading loop after the drag.
-- [ ] `Ctrl+Z` undoes the native Paste.
-- [ ] `Ctrl+Y` can redo when Excel has a native redo state.
-- [ ] Excel doesn't refresh repeatedly when Calculate/Change events occur.
-- [ ] Release build succeeds.
-- [ ] The `*-packed.xll` files can be used to load the add-in.
-
-## Key Files
-
-| File | Purpose |
+| Gejala | Kemungkinan penyebab dan solusi |
 |---|---|
-| `CombinedAddIn.cs` | Add-in entry point |
-| `Commands.cs` | StatDock commands and native formula Paste |
-| `StatHost.cs` | Lifecycle, refresh, debounce, polling, and protection |
-| `StatEngine.cs` | Capture and statistics calculation |
-| `StatBar.cs` | StatDock status bar UI |
-| `NavigatorPane.cs` | SheetDock navigation UI |
-| `*-packed.xll` | Deployment output |
+| Tab **SheetDock** tidak muncul | Aktifkan lewat *File → Options → Add-ins → Go*. Pastikan versi `.xll` (32/64-bit) cocok dengan Excel-mu. |
+| Excel memblokir add-in | Klik kanan `.xll` → Properties → **Unblock**, atau jalankan `Installer.bat`. |
+| `npm run build` gagal karena file terkunci | Excel masih memuat `.xll`. Pakai `npm run rebuild` (menutup Excel otomatis). |
+| Muncul error `EPERM` saat clean | Sama: Excel masih membuka file di `bin`. Tutup Excel atau jalankan `npm run rebuild`. |
+| Chip StatDock menutupi teks status bar | Sesuaikan konstanta `KeepNativeLeftPx` dan `KeepNativeRightPx` di `StatDock/UI/StatBar.cs`. |
+| Rumus dari StatDock tidak muncul | Lihat `%TEMP%\SheetDock.log`; baris terakhir menjelaskan jalur yang dipakai dan alasannya. |
+| Ctrl+C / Ctrl+V tidak bereaksi setelah klik sheet di panel | Pastikan memakai versi terbaru; fokus keyboard dikembalikan ke Excel setelah klik biasa di panel. |
 
-## Status
+---
 
-The project currently uses a unified add-in architecture:
+## Daftar uji manual
 
-```text
-Excel
-  │
-  └── CombinedAddIn
-        ├── SheetDock
-        │     └── NavigatorPane
-        │
-        └── StatDock
-              ├── StatHost
-              ├── StatEngine
-              ├── StatBar
-              └── Commands
-```
+Setelah build, cek minimal hal-hal ini:
 
-The main focus of the StatDock implementation is keeping the UI responsive, avoiding nested refreshes when Excel sends back-to-back events, and preserving Excel's native undo/redo for Paste operations.
+- [ ] Add-in termuat dan tab **SheetDock** muncul
+- [ ] Panel daftar sheet tampil dan klik chip berpindah sheet
+- [ ] Drag chip sheet mengubah urutan sheet
+- [ ] Klik kanan menampilkan menu Excel plus empat menu ekstra
+- [ ] Strip StatDock muncul di status bar dan angkanya berubah saat seleksi berubah
+- [ ] Filter data atau sembunyikan baris: angka StatDock ikut menyesuaikan
+- [ ] Tarik chip **Sum** ke sel kosong: rumus muncul dan tidak ada isi lain yang ikut
+- [ ] Copy sel, klik sheet lain di panel, lalu Ctrl+V: tetap berfungsi normal
+- [ ] Tidak ada loading cursor yang berputar terus setelah drag
+
+---
+
+## Catatan
+
+- Hanya untuk **Excel desktop di Windows**.
+- Lisensi belum ditentukan. Tambahkan file `LICENSE` sebelum project ini dibagikan secara publik.
