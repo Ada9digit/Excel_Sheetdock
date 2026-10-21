@@ -1403,6 +1403,20 @@ namespace SheetDock
             try { wb = app.ActiveWorkbook; } catch { }
             if (wb == null) return;
 
+            // Already the (only) active sheet: Activate() would change nothing except cancel copy mode.
+            try
+            {
+                if (string.Equals(GetActiveSheetName(), name, StringComparison.Ordinal))
+                {
+                    int selected = 1;
+                    try { selected = ((Excel.Sheets)app.ActiveWindow.SelectedSheets).Count; } catch { }
+                    if (selected <= 1) return;
+                }
+            }
+            catch { }
+
+            bool copyBefore = Globals.CopyModeActive();
+
             try
             {
                 object sheet = wb.Sheets[name];
@@ -1419,6 +1433,10 @@ namespace SheetDock
                 }
             }
             catch { }
+
+            if (copyBefore)
+                Globals.Log("Activate '" + name + "' while copy mode was ON; copy mode now: " +
+                            (Globals.CopyModeActive() ? "still ON" : "CANCELLED by Activate"));
         }
 
         // ========================================================

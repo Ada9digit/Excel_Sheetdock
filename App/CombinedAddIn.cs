@@ -76,6 +76,9 @@ namespace SheetDock
 
             StatDock.StatHost.Shutdown();
 
+            try { _hideTabsRetry?.Stop(); _hideTabsRetry?.Dispose(); } catch { }
+            _hideTabsRetry = null;
+
             foreach (var kv in _ctpPerWindow.ToArray())
                 try { kv.Value.Visible = false; kv.Value.Delete(); } catch { }
 
@@ -188,9 +191,41 @@ namespace SheetDock
             }
         }
 
+        private static System.Windows.Forms.Timer _hideTabsRetry;
+
         private static void HideSheetTabs(Excel.Window wn)
         {
-            try { if (wn != null) wn.DisplayWorkbookTabs = false; } catch { }
+            try
+            {
+                if (wn == null) return;
+                if (!wn.DisplayWorkbookTabs) return;      // already hidden: no write at all
+                if (Globals.CopyModeActive())             // a write now would cancel the copy
+                {
+                    ScheduleHideTabsRetry();
+                    return;
+                }
+                wn.DisplayWorkbookTabs = false;
+            }
+            catch { }
+        }
+
+        private static void ScheduleHideTabsRetry()
+        {
+            if (_hideTabsRetry != null) return;
+            _hideTabsRetry = new System.Windows.Forms.Timer { Interval = 700 };
+            _hideTabsRetry.Tick += (s, e) =>
+            {
+                try
+                {
+                    if (Globals.CopyModeActive()) return;
+                    _hideTabsRetry.Stop();
+                    _hideTabsRetry.Dispose();
+                    _hideTabsRetry = null;
+                    HideSheetTabs(Globals.Application?.ActiveWindow);
+                }
+                catch { }
+            };
+            _hideTabsRetry.Start();
         }
 
         private void App_NewWorkbook(Excel.Workbook wb)
@@ -215,7 +250,7 @@ namespace SheetDock
 
         private void App_WindowActivate(Excel.Workbook wb, Excel.Window wn)
         {
-            try { wn.DisplayWorkbookTabs = false; } catch { }
+            HideSheetTabs(wn);
             EnsureCtpForWindow(wn); NavigatorPane.RequestRefreshAll();
         }
 

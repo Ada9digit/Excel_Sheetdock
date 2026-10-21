@@ -250,6 +250,14 @@ namespace StatDock
                 var app = Globals.Application;
                 if (app == null) return;
 
+                // Copy / cut mode: any extra COM work (SpecialCells, WorksheetFunction, ...) risks
+                // cancelling the marching ants. Stay passive and retry after the copy ends.
+                if (SheetDock.Globals.CopyModeActive())
+                {
+                    _busyRetryAt = DateTime.UtcNow.AddMilliseconds(500);
+                    return;
+                }
+
                 // Don't enter SpecialCells/WorksheetFunction while Excel is still calculating
                 // or not yet Ready. One scheduled retry is cheaper than dozens of
                 // Calculate/Change events triggering each other.
@@ -387,6 +395,11 @@ namespace StatDock
             // e.g. a filter was applied or rows were hidden.
             var app = Globals.Application;
             if (app == null) return;
+            if (SheetDock.Globals.CopyModeActive())
+            {
+                _nextPollAt = DateTime.UtcNow.AddMilliseconds(500);
+                return;
+            }
             if (IsExcelBusy(app))
             {
                 _busyRetryAt = DateTime.UtcNow.AddMilliseconds(500);

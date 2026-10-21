@@ -1,245 +1,324 @@
 # SheetDock + StatDock
 
-**Two small tools that make Excel feel roomier: tidy sheet navigation on the side of your screen, and selection statistics you can simply "drag" into a formula.**
+An Excel-DNA add-in that combines **SheetDock** and **StatDock** into a single Excel add-in.
 
-![Platform](https://img.shields.io/badge/platform-Excel%20for%20Windows-217346?logo=microsoftexcel&logoColor=white)
-![Framework](https://img.shields.io/badge/.NET%20Framework-4.8-512BD4?logo=dotnet&logoColor=white)
-![Excel-DNA](https://img.shields.io/badge/Excel--DNA-1.7.0-blue)
-![Build](https://img.shields.io/badge/build-npm%20run%20build-CB3837?logo=npm&logoColor=white)
+## Features
 
----
+### SheetDock
+- Worksheet/workbook navigation from a dock pane.
+- Worksheet buttons are displayed as chips.
+- Quick navigation between sheets.
+- The UI uses a visual theme consistent with StatDock.
 
-## What is this, and why might you need it?
+### StatDock
+- Shows statistics for the current Excel selection in the status bar.
+- Event-based refresh with debounce.
+- Lightweight polling for changes such as filtering/hiding rows, which don't always raise an Excel event.
+- The status bar follows Excel's `DisplayStatusBar`.
+- Supports suspending visuals during startup or certain operations.
+- Refresh is held back during mouse operations to prevent repeated COM reads.
+- Protection against Excel being busy/calculating.
+- Native Paste is used to insert formulas so that undo stays managed by Excel.
 
-If you have ever worked in an Excel workbook with **dozens of sheets**, you know these two complaints:
+## Architecture
 
-1. **The sheet tabs at the bottom are cramped and awkward.** Names get truncated, you scroll left and right, and finding one sheet among 30 tabs is tiring.
-2. **The status bar statistics are view-only.** Excel shows Average, Count, and Sum for your selection, but to actually use those numbers you still have to type the formula yourself.
-
-**SheetDock + StatDock** solves both in a single add-in:
-
-| | The problem in plain Excel | With this add-in |
-|---|---|---|
-| **SheetDock** | Small, cramped tabs that need scrolling | A side panel listing every sheet as a "chip", reorderable by drag |
-| **StatDock** | Statistics are displayed but can't be reused | Statistic chips in the status bar that you can **drag onto a cell** to create a formula |
-
-There is nothing to learn. Install it, open Excel, and everything shows up right away.
-
----
-
-## A quick look
-
-A rough sketch (not an actual screenshot):
-
-```text
-┌─────────────┬──────────────────────────────────────────────────────┐
-│ SheetDock   │   A      B       C       D                           │
-│             │ 1  Name   Qty    Price   Total                       │
-│ ⠿ Summary   │ 2  Coffee 10     15000   150000                      │
-│ ⠿ Sales     │ 3  Tea    8      12000    96000                      │
-│ ⠿ Stock     │ 4  Milk   5      18000    90000                      │
-│ ⠿ Reports   │ 5                                                    │
-│ ⠿ Data 2024 │                                                      │
-│ ⠿ Data 2025 │                                                      │
-│    ...      │                                                      │
-├─────────────┴──────────────────────────────────────────────────────┤
-│ Ready   Sheet 2 of 12      Average  Count  Min  Max  [ Sum ]  100% │
-└────────────────────────────────────────────────────────────────────┘
-   ▲ SheetDock: the sheet list         ▲ StatDock: drag a chip onto a cell
-```
-
----
-
-## SheetDock: sane sheet navigation
-
-A panel on the left side of Excel (it can be docked elsewhere) that shows **all your sheets as a list of chips**.
-
-- **One click to switch sheets.** No tab scrolling. Both worksheets and chart sheets are supported.
-- **Drag to reorder.** Pull a chip by the handle on its side to move the sheet. The list auto-scrolls when you drag toward an edge.
-- **Select several sheets at once** with Ctrl or Shift, for example to duplicate multiple sheets in one go.
-- **Tab colors are shown**, so the color-coding you already use on your sheets stays useful.
-- **Right-click** opens Excel's native sheet menu (Rename, Delete, Move or Copy, Tab Color, Hide, Unhide, and so on), plus four extra items:
-  - **Add Sheet**
-  - **Insert From File...** (insert a sheet from another Excel file)
-  - **Duplicate**
-  - **Duplicate Selection** (duplicate every selected sheet)
-- **Keyboard shortcuts:** `F2` to rename, `Delete` to delete the selected sheet.
-- **Hidden sheets don't clutter the list.**
-- **The look follows your Office theme** (White, Colorful, Dark Gray, or Black), so it doesn't feel like a foreign object.
-- **Excel's built-in tabs are hidden** to avoid duplicates. You can bring them back any time from the ribbon.
-
----
-
-## StatDock: statistics you can drag
-
-A thin strip that sits on the **Excel status bar** (where the built-in Average/Count/Sum normally appear) and shows statistics for your current selection:
-
-`Average` · `Count` · `Numerical Count` · `Min` · `Max` · `Sum`
-
-What makes it different from the regular status bar:
-
-- **Drag a chip onto a cell to get a formula.** Select A1:A10, drag the **Sum** chip onto an empty cell, and that cell contains `=SUM(A1:A10)`. While dragging, a small preview shows the address of the target cell.
-- **Filter and hidden-row aware.** The numbers shown come only from **visible** cells. The generated formula adapts: for filtered data it uses the addresses of the visible areas, and if that gets too long it uses `SUBTOTAL(109, ...)`, which skips hidden rows automatically.
-- **Guards against mistakes.** Dropping a chip inside its own source range is rejected (avoiding a *circular reference*), and so is dropping it anywhere that isn't a cell.
-- **Adapts to the width.** When space is tight, the less important chips are hidden first. `Sum` is never hidden.
-- **Lightweight.** Updates run after a short delay (debounce) and are skipped while you drag-select or while Excel is calculating, so Excel doesn't feel sluggish.
-- **Follows the theme and status bar.** Colors match Excel, and the strip disappears if the status bar is turned off.
-
----
-
-## Ribbon
-
-The add-in adds one **SheetDock** tab to the ribbon with three buttons:
-
-| Button | What it does |
-|---|---|
-| **Custom SheetDock** | Show or hide the sheet list panel |
-| **Built-in Excel Tabs** | Show or hide Excel's built-in sheet tabs |
-| **Quick Stats** | Turn the StatDock strip in the status bar on or off |
-
----
-
-## Requirements
-
-- **Windows** with **Microsoft Excel desktop** (not Excel for Mac or Excel in the browser)
-- **.NET Framework 4.8** (already included in recent Windows 10 and 11)
-- Two file variants are provided: **64-bit** (`SheetDock64-packed.xll`) and **32-bit** (`SheetDock-packed.xll`). Pick the one that matches your Excel. Most modern Excel installations are 64-bit.
-
----
-
-## Installation
-
-### Quick way (recommended)
-
-1. Make sure `SheetDock64-packed.xll` and `Installer.bat` are in the same folder.
-2. **Double-click `Installer.bat`.** Allow the Administrator prompt.
-3. The installer closes Excel (save your work first), unblocks the downloaded file, and copies the add-in into your own AddIns folder.
-4. Open Excel. If the **SheetDock** tab doesn't appear, enable it via *File → Options → Add-ins → Manage: Excel Add-ins → Go*.
-
-### Manual way
-
-1. Open Excel, then go to *File → Options → Add-ins*.
-2. Choose **Manage: Excel Add-ins**, click **Go...**, then **Browse...**.
-3. Select the matching `.xll` file and tick the add-in.
-
-> **If Windows blocks the file:** right-click the `.xll` file → *Properties* → tick **Unblock** → OK. `Installer.bat` does this automatically.
-
----
-
-## Building from source
-
-For developers. All you need is **Windows** and **Node.js 16+**. The `dotnet` command doesn't have to be installed already: if it isn't found, the script downloads a portable .NET SDK into a `.dotnet/` folder inside the project (once only, no admin rights, and it doesn't touch your PATH).
-
-```powershell
-npm run build             # Release build; the .xll files appear in the project folder
-npm run rebuild           # close Excel, delete the old build, then build again
-npm run rebuild:install   # same as rebuild, then run Installer.bat straight away
-npm run clean             # delete bin, obj, and the built .xll files
-```
-
-No `npm install` is needed: the script uses only Node's built-in modules.
-
-Prefer not to open a terminal? Double-click:
-
-- `rebuild.bat` → close Excel, clean, rebuild
-- `rebuild-install.bat` → everything above, then install into Excel
-
-> ⚠️ `rebuild` and `rebuild:install` **force-close Excel** so the old `.xll` isn't locked. Save your work first.
-
-The build produces two files in the project root:
-
-```text
-SheetDock64-packed.xll   Excel 64-bit
-SheetDock-packed.xll     Excel 32-bit
-```
-
-These `.xll` files are *packed* (the DLL and dependencies are embedded), so one file per architecture is enough to share.
-
----
-
-## Project structure
+Main structure:
 
 ```text
 SheetDock/
-├── App/
-│   └── CombinedAddIn.cs          Add-in entry point, wires both modules together
-├── UI/
-│   └── SheetDockRibbon.cs        Ribbon tab and buttons
-├── SheetDock/Navigation/         SheetDock module
-│   ├── NavigatorPane.cs          The sheet list panel (UI, drag, menu, sheet actions)
-│   ├── RecentSheets.cs           History of visited sheets
-│   ├── FolderStore.cs            Storage for a virtual folder structure inside the workbook
-│   ├── Commands.cs               Macros for the right-click menu
-│   └── Globals.cs
-├── StatDock/                     StatDock module
-│   ├── Core/
-│   │   ├── StatEngine.cs         Reads the selection and computes statistics
-│   │   ├── StatHost.cs           Lifecycle, debounce, polling, refresh guards
-│   │   ├── Commands.cs           Puts the formula into the cell
-│   │   └── Globals.cs
-│   ├── UI/
-│   │   ├── StatBar.cs            The strip on the status bar
-│   │   ├── StatChip.cs           The draggable statistic chips
-│   │   ├── DragGhost.cs          Preview shown while dragging
-│   │   └── ThemeColors.cs        Colors that follow the Excel theme
-│   └── Infrastructure/
-│       └── Native.cs             Win32 calls (window position, DPI, mouse)
-├── scripts/build.js              npm build script
-├── Installer.bat                 Add-in installer
-├── rebuild.bat / rebuild-install.bat
-├── SheetDock.csproj              .NET Framework 4.8 + Excel-DNA project
-└── package.json
+├── CombinedAddIn.cs
+├── Ribbon/
+│   └── ...
+├── SheetDock/
+│   └── Navigation/
+│       └── NavigatorPane.cs
+└── StatDock/
+    ├── Core/
+    │   ├── Commands.cs
+    │   ├── StatEngine.cs
+    │   └── StatHost.cs
+    └── UI/
+        └── StatBar.cs
 ```
 
----
+`CombinedAddIn` is the add-in entry point. SheetDock and StatDock run as modules inside the same add-in.
 
-## How it works (for the curious)
+## StatDock Refresh Model
 
-**Architecture.** The add-in is built with [Excel-DNA](https://excel-dna.net/), which bridges C# to Excel. `CombinedAddIn` is the single entry point and runs SheetDock and StatDock as two modules inside the same add-in.
+StatDock uses three timers:
 
-**StatDock refresh model.** Reading the selection over COM is expensive, so StatDock uses three timers:
+1. **Debounce timer**
+   - Merges consecutive Excel events.
+   - Prevents every event from immediately running `StatEngine.Capture()`.
 
-1. **Debounce:** merges bursts of Excel events into a single update.
-2. **Track:** light and frequent; it only keeps the strip's position and visibility in sync, without reading any data.
-3. **Poll:** detects changes that don't always raise an event (such as filtering or hiding rows), and is rate-limited.
+2. **Track timer**
+   - Runs more frequently.
+   - Used to keep the strip's position/visibility on the status bar in sync.
+   - Does not perform a full COM statistics read.
 
-Several guards prevent updates from triggering each other in a chain: a *mute* window after each update, deferral while a mouse button is held, and deferral while Excel is busy or calculating.
+3. **Poll timer**
+   - Used to detect changes that don't always raise an Excel event.
+   - Examples: changes caused by filtering or hidden rows.
+   - Polling is throttled so it doesn't keep calling COM while Excel is busy.
 
-**Inserting formulas.** The formula goes through the clipboard and a **Ctrl+V sent to Excel**, so Excel handles it as a user action. Excel's copy mode is cancelled first so that what gets pasted is really the formula. A moment later the result is checked; if the cell doesn't contain a valid formula (for example because of localized function names), the formula is written directly through `Range.Formula` using English function names as a fallback. Every drop is logged to `%TEMP%\SheetDock.log`, which is useful for tracing problems.
+### Refresh Gate
 
----
+`StatHost` has several protection mechanisms:
+
+- `_updateRunning`
+- `_eventMuteUntil`
+- `_filterSettleUntil`
+- `_nextPollAt`
+- `_busyRetryAt`
+- `_nextUpdateAt`
+
+The goal is to make sure a single Excel operation doesn't produce a chain like:
+
+```text
+Excel event
+    ↓
+StatDock Update
+    ↓
+StatEngine.Capture
+    ↓
+Excel event
+    ↓
+StatDock Update
+    ↓
+...
+```
+
+Events that occur during the mute/settle period are not used to trigger nested refreshes.
+
+## Native Paste and Undo
+
+StatDock formulas are not written using:
+
+```csharp
+target.Formula = formula;
+```
+
+Instead, the clipboard + Excel's native command is used:
+
+```text
+Clipboard
+   ↓
+target.Select()
+   ↓
+CommandBars.ExecuteMso("Paste")
+   ↓
+Excel native undo history
+```
+
+The implementation lives in:
+
+```text
+StatDock/Core/Commands.cs
+```
+
+This path is used deliberately because writing directly to `Range.Formula` through automation can interfere with Excel's native undo history.
+
+StatDock does not install:
+
+```text
+Application.OnUndo
+Application.OnRepeat
+```
+
+This way, undo/redo commands remain under Excel's native mechanism.
+
+## External Edit Protection
+
+Before the native Paste:
+
+```csharp
+StatHost.BeginExternalEdit();
+```
+
+StatDock then holds back refreshes while Excel performs the Paste operation.
+
+After the operation completes:
+
+```csharp
+StatHost.EndExternalEdit(250);
+```
+
+This is necessary because native Paste can raise several Excel events, for example:
+
+- Activate
+- Select
+- Change
+- Calculate
+
+Those events must not immediately trigger nested `StatEngine.Capture()` calls.
+
+## Build (npm)
+
+Prasyarat: Windows dan [Node.js](https://nodejs.org) >= 16. .NET SDK tidak perlu diinstall: jika `dotnet` tidak ada di PATH, `npm run build` mengunduh SDK portable ke folder `.dotnet\\` di project (sekali saja, butuh internet, tanpa admin). Target project adalah .NET Framework 4.8; kompilasi C# tetap dilakukan `dotnet`, sedangkan npm hanya menyiapkan SDK, menjalankan build, dan merapikan hasilnya. Folder `.dotnet` tidak dihapus oleh `npm run clean`; hapus manual jika ingin membersihkannya.
+
+```powershell
+npm run build      # build Release, hasil .xll di folder ini
+npm run rebuild    # tutup Excel, hapus bin/obj/xll lama, lalu build
+npm run rebuild:install  # seperti rebuild, lalu jalankan Installer.bat
+npm run clean      # hapus bin, obj, dan *-packed.xll di root
+```
+
+Tidak ada `npm install` yang perlu dijalankan karena script tidak memakai dependency.
+
+`npm run rebuild` menutup Excel secara paksa (taskkill), jadi simpan pekerjaanmu dulu. Dua file `.bat` di root bisa di-double-click: `rebuild.bat` dan `rebuild-install.bat`.
+
+## Release
+
+Hasil build disalin langsung ke folder project (root), bukan ke dalam `bin\Release\net48\publish`:
+
+```text
+SheetDock\
+├── SheetDock64-packed.xll   (Excel 64-bit)
+├── SheetDock-packed.xll     (Excel 32-bit)
+├── Installer.bat
+├── package.json
+├── SheetDock.csproj
+└── ...
+```
+
+File `.xll` sudah *packed* (DLL dan dependency tertanam), jadi cukup satu file per arsitektur. Untuk memasang, jalankan `Installer.bat`, atau load `.xll` lewat Excel Add-ins.
+
+## Installation
+
+1. Build the project in `Release` configuration.
+2. Make sure the output is available in the project folder.
+3. Open Excel.
+4. Load the `.xll` file from the project folder via:
+   - `File`
+   - `Options`
+   - `Add-ins`
+   - `Excel Add-ins`
+   - `Browse`
+5. Select the `.xll` file.
+6. Make sure the SheetDock/StatDock ribbon appears.
 
 ## Troubleshooting
 
-| Symptom | Likely cause and fix |
+### Excel keeps showing the loading cursor after drag/paste
+
+Make sure the latest version of `StatHost.cs` is used.
+
+Native Paste does produce several Excel events. `BeginExternalEdit()` and `EndExternalEdit()` must still be called from `Commands.PasteFormulaNative()`.
+
+### Build fails because the `.xll` file is in use
+
+Close Excel.
+
+If it is still locked:
+
+```powershell
+Stop-Process -Name EXCEL -Force
+```
+
+Then:
+
+```powershell
+Remove-Item -Recurse -Force .\bin, .\obj -ErrorAction SilentlyContinue
+dotnet build -c Release
+```
+
+### `CS0656 Missing compiler required member Microsoft.CSharp.RuntimeBinder...`
+
+Do not use `dynamic` in `Commands.cs` for `CommandBars.ExecuteMso`.
+
+The current implementation uses reflection:
+
+```csharp
+MethodInfo
+```
+
+so it doesn't require the C# runtime binder.
+
+### Duplicate class
+
+Make sure there is only one implementation of each class.
+
+Structure in use:
+
+```text
+StatDock/Core/Commands.cs
+StatDock/Core/StatHost.cs
+StatDock/UI/StatBar.cs
+SheetDock/Navigation/NavigatorPane.cs
+```
+
+Avoid leftover old files with the same name/class in other folders.
+
+## Development Notes
+
+### Do not use `Application.OnUndo`
+
+`Application.OnUndo` replaces Excel's undo command with an add-in callback. For a drag/paste workflow that must stay compatible with Excel's native undo/redo, use Excel's native Paste.
+
+### Do not perform COM capture from the Track timer
+
+`Track()` is designed for lightweight, P/Invoke-only operations. The full statistics read is done by `Update()` via `StatEngine.Capture()`.
+
+### Do not remove the mute window without testing
+
+Excel events can fire back-to-back during:
+
+- Paste
+- Select
+- Change
+- Calculate
+- Activate
+- Filter
+
+Without debounce/mute, these operations can cause repeated refreshes and make Excel look like it is constantly loading.
+
+## Testing Checklist
+
+After building, test at minimum:
+
+- [ ] The add-in loads in Excel.
+- [ ] The ribbon appears.
+- [ ] SheetDock can switch worksheets.
+- [ ] StatDock appears on the status bar.
+- [ ] Selection changes → statistics update.
+- [ ] Filter a worksheet → statistics update.
+- [ ] Hide/unhide rows → statistics update.
+- [ ] Drag a formula from StatDock onto a cell.
+- [ ] No loading loop after the drag.
+- [ ] `Ctrl+Z` undoes the native Paste.
+- [ ] `Ctrl+Y` can redo when Excel has a native redo state.
+- [ ] Excel doesn't refresh repeatedly when Calculate/Change events occur.
+- [ ] Release build succeeds.
+- [ ] The `*-packed.xll` files can be used to load the add-in.
+
+## Key Files
+
+| File | Purpose |
 |---|---|
-| The **SheetDock** tab doesn't appear | Enable it via *File → Options → Add-ins → Go*. Make sure the `.xll` variant (32/64-bit) matches your Excel. |
-| Excel blocks the add-in | Right-click the `.xll` → Properties → **Unblock**, or run `Installer.bat`. |
-| `npm run build` fails because a file is locked | Excel is still holding the `.xll`. Use `npm run rebuild` (it closes Excel automatically). |
-| An `EPERM` error appears during clean | Same cause: Excel has a file in `bin` open. Close Excel or run `npm run rebuild`. |
-| StatDock chips cover the status bar text | Adjust the `KeepNativeLeftPx` and `KeepNativeRightPx` constants in `StatDock/UI/StatBar.cs`. |
-| The StatDock formula doesn't appear | Check `%TEMP%\SheetDock.log`; the last lines explain which path was used and why. |
-| Ctrl+C / Ctrl+V do nothing after clicking a sheet in the panel | Make sure you are on the latest version; keyboard focus is returned to Excel after a plain click in the panel. |
+| `CombinedAddIn.cs` | Add-in entry point |
+| `Commands.cs` | StatDock commands and native formula Paste |
+| `StatHost.cs` | Lifecycle, refresh, debounce, polling, and protection |
+| `StatEngine.cs` | Capture and statistics calculation |
+| `StatBar.cs` | StatDock status bar UI |
+| `NavigatorPane.cs` | SheetDock navigation UI |
+| `*-packed.xll` | Deployment output |
 
----
+## Status
 
-## Manual test checklist
+The project currently uses a unified add-in architecture:
 
-After building, check at least these:
+```text
+Excel
+  │
+  └── CombinedAddIn
+        ├── SheetDock
+        │     └── NavigatorPane
+        │
+        └── StatDock
+              ├── StatHost
+              ├── StatEngine
+              ├── StatBar
+              └── Commands
+```
 
-- [ ] The add-in loads and the **SheetDock** tab appears
-- [ ] The sheet list panel is shown and clicking a chip switches sheets
-- [ ] Dragging a sheet chip changes the sheet order
-- [ ] Right-click shows the Excel menu plus the four extra items
-- [ ] The StatDock strip appears on the status bar and its numbers change as the selection changes
-- [ ] Apply a filter or hide rows: the StatDock numbers follow
-- [ ] Drag the **Sum** chip onto an empty cell: the formula appears and nothing else comes along with it
-- [ ] Copy a cell, click another sheet in the panel, then Ctrl+V: still works normally
-- [ ] No endlessly spinning loading cursor after a drag
-
----
-
-## Notes
-
-- For **Excel desktop on Windows** only.
-- No license has been chosen yet. Add a `LICENSE` file before sharing this project publicly.
+The main focus of the StatDock implementation is keeping the UI responsive, avoiding nested refreshes when Excel sends back-to-back events, and preserving Excel's native undo/redo for Paste operations.
